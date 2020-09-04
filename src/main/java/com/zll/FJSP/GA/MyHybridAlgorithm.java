@@ -21,11 +21,22 @@ public class MyHybridAlgorithm {
     private Problem input;
     private Operation[][] operationMatrix;
     private Random r;
+    private Chromosome[] parents;
+    private Chromosome[] children;
+    private Job[] jobs;
+    private ChromosomeOperation chromOps;
+    private Chromosome currentBest;
+    private Chromosome best;
+    private int noImprove = 0;
+    private int gen = 0;
+    private CaculateFitness c;
+    private Solution bestSolution;
 
-    private final int popSize = 50;// population size 400
-    private final double pr = 0.10;// Reproduction probability
-    private final double pc = 0.80;// Crossover probability
-    private final double pm = 0.10;// Mutation probability
+    private final int popSize = 400;// population size 400
+    private double pr = 0.005;// Reproduction probability
+    //private final double m;
+    private double pc = 0.80;// Crossover probability
+    private double pm = 0.10;// Mutation probability
 
     private final int maxT = 9;// tabu list length
     private final int maxTabuLimit = 100;// maxTSIterSize = maxTabuLimit * (Gen / maxGen)
@@ -33,11 +44,13 @@ public class MyHybridAlgorithm {
 
     private final double pp = 0.30;// perturbation probability
 
-    private final int maxGen = 200;// iterator for 200 time for each loop
-    private final int maxStagnantStep = 30;// max iterator no improve
+    private int maxGen = 100;// iterator for 200 time for each loop
+    private final int maxStagnantStep = 20;// max iterator no improve
     private final int timeLimit = -1;// no time limit
 
-    public MyHybridAlgorithm(Problem input) {
+    public MyHybridAlgorithm(Problem input, int generations) {
+        maxGen = generations;
+        //this.m = (1 - pr) / (maxGen);
         this.input = input;
         this.operationMatrix = new Operation[input.getJobCount()][];
 
@@ -54,15 +67,15 @@ public class MyHybridAlgorithm {
     /**
      * the whole logic of the flexible job shop sheduling problem
      */
-    public Solution solve() {
+    public void solve() {
         int jobCount = input.getJobCount();
-        CaculateFitness c = new CaculateFitness();
-        ChromosomeOperation chromOps = new ChromosomeOperation(r, input);
+        c = new CaculateFitness();
+        chromOps = new ChromosomeOperation(r, input);
 //        TabuSearch1 tabu = new TabuSearch1(input, r);
 
         // 初始化工件类entries
         int[][] operationToIndex = input.getOperationToIndex();
-        Job[] jobs = new Job[jobCount];
+        jobs = new Job[jobCount];
         for (int i = 0; i < jobCount; i++) {
             int index = i;// 工件编号
             int opsNr = input.getOperationCountArr()[i];// 工件工序数
@@ -74,16 +87,14 @@ public class MyHybridAlgorithm {
             jobs[i] = new Job(index, opsNr, opsIndex, opsMacNr);
         }
 
-        long startTime = System.currentTimeMillis();// 算法开始
-
         // 随机生成初始种群
-        Chromosome[] parents = new Chromosome[this.popSize];// 染色体
+        parents = new Chromosome[this.popSize];// 染色体
         for (int i = 0; i < this.popSize; i++) {
             parents[i] = new Chromosome(jobs, r);
             parents[i].fitness = 1.0 / c.evaluate(parents[i], input, operationMatrix);
         }
 
-        Chromosome[] children = new Chromosome[this.popSize];
+        children = new Chromosome[this.popSize];
         for (int i = 0; i < this.popSize; i++) {
             children[i] = new Chromosome(parents[i]);
         }
@@ -97,75 +108,88 @@ public class MyHybridAlgorithm {
                 maxFitness = parents[i].fitness;
             }
         }
-        Chromosome best = new Chromosome(parents[index]);
-        Chromosome currentBest = new Chromosome(parents[index]);
+        best = new Chromosome(parents[index]);
+        currentBest = new Chromosome(parents[index]);
+    }
 
-        int noImprove = 0;
-        int gen = 0;
-        while (gen < this.maxGen) {
+    public boolean newGeneration() {
 
-            // 陷入局部最优时进行扰动:取部分精英个体后随机生成新个体
-            if (gen - noImprove > this.maxStagnantStep) {
+        if(gen > maxGen) return false;
+
+        // 陷入局部最优时进行扰动:取部分精英个体后随机生成新个体
+        /*double fr = calcFrequeny();
+        double hmg = calcHammingDistance();
+        double l = currentBest.gene_OS.length + currentBest.gene_MS.length;
+        this.pm = Math.abs(0.5 * Math.exp(-6.2146 * currentBest.fitness));
+        System.out.println("P_m=" + this.pm);
+        double pp = Math.abs((2d - 1d) / 2d - (l * this.pm)) / ((l / (l - 1d)) * hmg * (1d - fr));
+        this.pc = pp == Double.NEGATIVE_INFINITY ? 0.0026857308097803768 : pp;
+        System.out.println("P_c=" + this.pc);*/
 //                break;
-
-                int num = (int) (pp * popSize);
-                ArrayList<Chromosome> p = new ArrayList<>();
-                Collections.addAll(p, parents);
-                Collections.sort(p);
-                for (int i = 0; i < num; i++)
-                    parents[i] = p.get(i);
-                for (int i = num; i < this.popSize; i++) {
-                    parents[i] = new Chromosome(jobs, r);
-                    parents[i].fitness = 1.0 / c.evaluate(parents[i], input, operationMatrix);
-                }
-
-                noImprove = gen;
+        if (gen - noImprove > this.maxStagnantStep) {
+            int num = (int) (pp * popSize);
+            ArrayList<Chromosome> p = new ArrayList<>();
+            Collections.addAll(p, parents);
+            Collections.sort(p);
+            for (int i = 0; i < num; i++)
+                parents[i] = p.get(i);
+            for (int i = num; i < this.popSize; i++) {
+                parents[i] = new Chromosome(jobs, r);
+                parents[i].fitness = 1.0 / c.evaluate(parents[i], input, operationMatrix);
             }
 
-            // 选择 selection
-            children = chromOps.Selection(parents, pr);
+            noImprove = gen;
+        }
+        // 选择 selection
+        /*double sum = 0;
+        for (int i = 0; i < this.popSize; i++) {
+            sum += children[i].fitness;
+        }
+        pr = currentBest.fitness / sum;//this.m * gen + 0.1;
+        System.out.println("P_r=" + pr);*/
+        children = chromOps.Selection(parents, pr);
 
-            // 交叉 cross
-            for (int i = 0; i < this.popSize; i += 2) {
-                if (r.nextDouble() < this.pc) {
+        // 交叉 cross
+        for (int i = 0; i < this.popSize; i += 2) {
+            if (r.nextDouble() < this.pc) {
 //					int fatherIndex = r.nextInt(popSize);
 //					int motherIndex = r.nextInt(popSize);
 //					while (fatherIndex == motherIndex)
 //						motherIndex = r.nextInt(popSize);
-                    int fatherIndex = i;
-                    int motherIndex = i + 1;
-                    chromOps.Crossover(children[fatherIndex], children[motherIndex]);
-                }
+                int fatherIndex = i;
+                int motherIndex = i + 1;
+                chromOps.Crossover(children[fatherIndex], children[motherIndex]);
             }
+        }
 
-            // 变异 mutation
-            for (int i = 0; i < this.popSize; i++) {
-                if (r.nextDouble() < this.pm) {
-                    chromOps.Mutation(children[i]);
-                }
+        // 变异 mutation //Hesser.1991
+        for (int i = 0; i < this.popSize; i++) {
+            if (r.nextDouble() < this.pm) {
+                chromOps.Mutation(children[i]);
             }
+        }
 
-            // update fitness
+        // update fitness
 //            for (int i = 0; i < this.popSize; i++){
 //                children[i].fitness = 1.0 / c.evaluate(children[i], input, operationMatrix);
 //                parents[i] = new Chromosome(children[i]);
 //            }
-            for (int i = 0; i < this.popSize; i++) {
-                children[i].fitness = 1.0 / c.evaluate(children[i], input, operationMatrix);
-                int maxTSIterSize = (int) (maxGen * ((float) gen / (float) maxGen));
-                Solution sol = new Solution(operationMatrix, children[i], input, 1.0 / children[i].fitness);
+        for (int i = 0; i < this.popSize; i++) {
+            children[i].fitness = 1.0 / c.evaluate(children[i], input, operationMatrix);
+            int maxTSIterSize = (int) (maxGen * ((float) gen / (float) maxGen));
+            Solution sol = new Solution(operationMatrix, children[i], input, 1.0 / children[i].fitness);
 
-                // TS1
-                sol = NeiborAl2.search(sol, maxTSIterSize);
+            // TS1
+            sol = NeiborAl2.search(sol, maxTSIterSize);
 
-                // TS2
+            // TS2
 //                sol = NeighbourAlgorithms.neighbourSearch(sol);
 
-                parents[i] = sol.toChromosome();
-            }
+            parents[i] = sol.toChromosome();
+        }
 
-            // get best chromosome
-            currentBest = getBest(parents);
+        // get best chromosome
+        currentBest = getBest(parents);
 
 //            ArrayList<Chromosome> p = new ArrayList<>();
 //            Collections.addAll(p, children);
@@ -183,24 +207,60 @@ public class MyHybridAlgorithm {
 //            }
 
 
-            if (best.fitness < currentBest.fitness) {
-                best = new Chromosome(currentBest);
-                noImprove = gen;
-                System.out.println("In " + gen + " generation, find new best fitness is:" + currentBest.fitness);
-            }
-            System.out.println(" After " + gen + " generation, the best fitness is:" + best.fitness);
-
-            gen++;
+        if (best.fitness < currentBest.fitness) {
+            best = new Chromosome(currentBest);
+            noImprove = gen;
         }
-        Solution bestSolution = new Solution(operationMatrix, best, input, c.evaluate(best, input, operationMatrix));
-        System.out.println();
-        System.out.println(" After " + gen + " generation, the best schedule cost is:" + bestSolution.cost);
 
-        long endTime = System.currentTimeMillis();// 算法开始
-        System.out.println(" 算法时间花费：" + (endTime - startTime) / 1000.0 + "s");
-        bestSolution.algrithmTimeCost = (endTime - startTime) / 1000.0;
+        gen++;
+        bestSolution = new Solution(operationMatrix, best, input, c.evaluate(best, input, operationMatrix));
 
-        return bestSolution;
+        return true;
+    }
+
+    private double calcHammingDistance() {
+        double distance = Double.MAX_VALUE;
+        for (int i = 0; i < this.popSize; i++) {
+            double tmp = 0;
+            for (int j = i + 1; j < this.popSize; j++) {
+                for (int i1 = 0; i1 < children[i].gene_OS.length; i1++) {
+                    if (children[i].gene_OS[i1] != children[j].gene_OS[i1]) {
+                        tmp++;
+                    }
+                }
+                for (int i1 = 0; i1 < children[i].gene_MS.length; i1++) {
+                    if (children[i].gene_MS[i1] != children[j].gene_MS[i1]) {
+                        tmp++;
+                    }
+                }
+            }
+            for (int m = i - 1; m > 0; m--) {
+                for (int i1 = 0; i1 < children[i].gene_OS.length; i1++) {
+                    if (children[i].gene_OS[i1] != children[m].gene_OS[i1]) {
+                        tmp++;
+                    }
+                }
+                for (int i1 = 0; i1 < children[i].gene_MS.length; i1++) {
+                    if (children[i].gene_MS[i1] != children[m].gene_MS[i1]) {
+                        tmp++;
+                    }
+                }
+            }
+            if (tmp < distance) {
+                distance = tmp;
+            }
+        }
+        return distance;
+    }
+
+    private double calcFrequeny() {
+        double fr = 1;
+        for (int i = 0; i < this.popSize; i++) {
+            if (currentBest.compareTo(children[i]) == 0) {
+                fr++;
+            }
+        }
+        return fr/this.popSize;
     }
 
     private Chromosome getBest(Chromosome[] parents) {
@@ -213,5 +273,9 @@ public class MyHybridAlgorithm {
             }
         }
         return new Chromosome(parents[index]);
+    }
+
+    public Solution getBestSolution() {
+        return bestSolution;
     }
 }

@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="MYFJSP:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/MYFJSP_jar</output-path>
+    <root id="archive" name="MYFJSP.jar">
+      <element id="module-output" name="MYFJSP" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/commons/commons-csv/1.8/commons-csv-1.8.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

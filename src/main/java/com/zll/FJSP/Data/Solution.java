@@ -3,6 +3,7 @@ package com.zll.FJSP.Data;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
@@ -16,7 +17,8 @@ import com.zll.FJSP.GA.Chromosome;
  * @author zll-hust E-mail:zh20010728@126.com
  * @date 创建时间：2020年5月30日 下午6:11:48
  */
-public class Solution {
+public class Solution implements Serializable {
+    private static final long serialVersionUID = -4514084514601401127L;
     public Operation[][] operationMatrix; // job i operation j
     public Chromosome chromosome;
     public Problem problem;
@@ -26,7 +28,8 @@ public class Solution {
     public Random r;
 
     public Solution() {
-
+        operationMatrix = new Operation[0][0];
+        machineMatrix = new Operation[0][0];
     }
 
     public Solution(Problem p, Random r) {
@@ -200,17 +203,17 @@ public class Solution {
         chromosome.gene_OS = new int[problem.getTotalOperationCount()];
 
         ArrayList<Operation> state = new ArrayList<Operation>();
-        for(Operation[] ops :operationMatrix)
-            for(Operation o :ops)
+        for (Operation[] ops : operationMatrix)
+            for (Operation o : ops)
                 state.add(o);
 
         state.sort((o1, o2) -> ((Integer) o1.startTime).compareTo(o2.startTime));
-        for(int i = 0 ; i < chromosome.gene_MS.length; i++){
+        for (int i = 0; i < chromosome.gene_MS.length; i++) {
             Operation o = state.get(i);
             chromosome.gene_OS[i] = o.jobNo;
             int m = 0;
-            for(int j = 0; j <= o.machineNo; j++)
-                if(problem.getProDesMatrix()[problem.getOperationToIndex()[o.jobNo][o.task]][j] != 0) m++;
+            for (int j = 0; j <= o.machineNo; j++)
+                if (problem.getProDesMatrix()[problem.getOperationToIndex()[o.jobNo][o.task]][j] != 0) m++;
             chromosome.gene_MS[problem.getOperationToIndex()[o.jobNo][o.task]] = m;
         }
 
@@ -259,7 +262,7 @@ public class Solution {
         for (int i = 0; i < operationMatrix.length; i++) {
             for (int j = 1; j < problem.getOperationCountArr()[i]; j++) {
                 if (!exist[i][j]) {
-                    System.out.println("存在未完成的工件！" + "job" + i + " task" +j + ";");
+                    System.out.println("存在未完成的工件！" + "job" + i + " task" + j + ";");
                     return false;
                 }
             }
@@ -276,5 +279,18 @@ public class Solution {
 
         System.out.println("该解正确且可行！");
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Solution{" +
+                "operationMatrix=" + Arrays.toString(operationMatrix) +
+                ", chromosome=" + chromosome +
+                ", problem=" + problem +
+                ", machineMatrix=" + Arrays.toString(machineMatrix) +
+                ", cost=" + cost +
+                ", algrithmTimeCost=" + algrithmTimeCost +
+                ", r=" + r +
+                '}';
     }
 }

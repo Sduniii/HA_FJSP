@@ -39,8 +39,12 @@ public class Main {
                 Input input = new Input(new File("./input/" + instances[j]));// 输入算例
                 Problem p = input.getProblemDesFromFile();
 
-                MyHybridAlgorithm GA = new MyHybridAlgorithm(p);
-                Solution GAbest = GA.solve();
+                MyHybridAlgorithm GA = new MyHybridAlgorithm(p,400);
+                GA.solve();
+                Solution GAbest = GA.getBestSolution();
+                while (GA.newGeneration()){
+                    GAbest = GA.getBestSolution();
+                }
 //                Solution TSbest = NeighbourAlgorithms.neighbourSearch(GAbest);
 
                 System.out.println();
