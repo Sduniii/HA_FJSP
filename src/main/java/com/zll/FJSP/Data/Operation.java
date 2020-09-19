@@ -17,7 +17,8 @@ public class Operation implements Serializable {
     public int aStartTime;
     public int machineNo;
     public int span;
-    public String id;
+    public int id;
+    public String sId;
 
     public Operation() {
         jobNo = -1;
@@ -28,15 +29,16 @@ public class Operation implements Serializable {
         machineNo = -1;
     }
 
-    public Operation(String id, int span, int machine, int job) {
+    public Operation(int id, int span, int machine, int job) {
         this.id = id;
         this.span = span;
         this.machineNo = machine;
         this.jobNo = job;
     }
 
-    public Operation(int machine, int job, int start, int end, int task) {
-        this.id = "J" + Integer.toString(job) + "T" + Integer.toString(task);
+    public Operation(int id, int machine, int job, int start, int end, int task) {
+        this.id = id;
+        this.sId = "J" + job + "T" + task;
         this.span = end - start;
         this.machineNo = machine;
         this.jobNo = job;
@@ -46,6 +48,7 @@ public class Operation implements Serializable {
     }
 
     public Operation(Operation o) {
+        this.sId = o.sId;
         this.id = o.id;
         this.span = o.span;
         this.jobNo = o.jobNo;
@@ -75,7 +78,8 @@ public class Operation implements Serializable {
                 ", aStartTime=" + aStartTime +
                 ", machineNo=" + machineNo +
                 ", span=" + span +
-                ", id='" + id + '\'' +
+                ", id=" + id +
+                ", sId='" + sId + "'" +
                 '}';
     }
 

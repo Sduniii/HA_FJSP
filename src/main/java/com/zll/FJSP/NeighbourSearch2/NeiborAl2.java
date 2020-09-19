@@ -31,7 +31,7 @@ public class NeiborAl2 {
 		for (int i = 0; i < operationMatrix.length; i++) {
         	iniSol.add(new ArrayList<Operation>());
             for (int j = 0; j < operationMatrix[i].length; j++)
-				iniSol.get(i).add(new Operation(operationMatrix[i][j].machineNo, operationMatrix[i][j].jobNo, operationMatrix[i][j].startTime ,operationMatrix[i][j].endTime, operationMatrix[i][j].task));
+				iniSol.get(i).add(new Operation(operationMatrix[i][j].id, operationMatrix[i][j].machineNo, operationMatrix[i][j].jobNo, operationMatrix[i][j].startTime ,operationMatrix[i][j].endTime, operationMatrix[i][j].task));
         }
 		return iniSol;
 	}
