@@ -120,8 +120,9 @@ public class MyHybridAlgorithm {
         /*double fr = calcFrequeny();
         double hmg = calcHammingDistance();
         double l = currentBest.gene_OS.length + currentBest.gene_MS.length;
-        this.pm = Math.abs(0.5 * Math.exp(-6.2146 * currentBest.fitness));
-        System.out.println("P_m=" + this.pm);
+        */
+        this.pm = 0.5 * Math.exp(-6.2146 * currentBest.fitness);
+        /*System.out.println("P_m=" + this.pm);
         double pp = Math.abs((2d - 1d) / 2d - (l * this.pm)) / ((l / (l - 1d)) * hmg * (1d - fr));
         this.pc = pp == Double.NEGATIVE_INFINITY ? 0.0026857308097803768 : pp;
         System.out.println("P_c=" + this.pc);*/
@@ -141,12 +142,12 @@ public class MyHybridAlgorithm {
             noImprove = gen;
         }
         // 选择 selection
-        /*double sum = 0;
+        double sum = 0;
         for (int i = 0; i < this.popSize; i++) {
             sum += children[i].fitness;
         }
         pr = currentBest.fitness / sum;//this.m * gen + 0.1;
-        System.out.println("P_r=" + pr);*/
+        System.out.println("P_r=" + pr);
         children = chromOps.Selection(parents, pr);
 
         // 交叉 cross
